@@ -1,0 +1,32 @@
+name: wasm
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.5"
+
+      - name: Install optint and wasm_of_ocaml
+        run: opam install -y . wasm_of_ocaml-compiler
+
+      - name: Build and run the wasm test under node (no integer-overflow, #28)
+        env:
+          OPTINT_WASM_TEST: 1
+        run: |
+          opam exec -- dune build @test/wasm/runtest 2> wasm.log || {
+            cat wasm.log
+            exit 1
+          }
+          cat wasm.log
+          if grep -q integer-overflow wasm.log; then
+            echo "::error::wasm_of_ocaml emitted an integer-overflow warning (regression of #28)"
+            exit 1
+          fi

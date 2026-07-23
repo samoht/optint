@@ -1,0 +1,16 @@
+; The wasm round-trip test, run under node. Gated on OPTINT_WASM_TEST so a
+; plain `dune build` / `dune runtest` (the CI test matrix) needs no wasm
+; toolchain; the wasm workflow sets it and drives this alias.
+(executable
+ (name wasm_check)
+ (modes wasm)
+ (enabled_if
+  (= %{env:OPTINT_WASM_TEST=0} 1))
+ (libraries optint))
+
+(rule
+ (alias runtest)
+ (enabled_if
+  (= %{env:OPTINT_WASM_TEST=0} 1))
+ (action
+  (run node %{dep:wasm_check.bc.wasm.js})))
